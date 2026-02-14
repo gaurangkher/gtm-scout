@@ -131,19 +131,19 @@ class TDLRScraper:
                                 estimated_end_date, date_scraped
                             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         ''', (
-                            project.get('projectId'),
-                            project.get('projectNumber'),
-                            project.get('projectName'),
-                            project.get('projectCreatedOn'),
-                            project.get('projectStatus'),
-                            project.get('facilityName'),
-                            project.get('city'),
-                            project.get('county'),
-                            project.get('typeOfWork'),
-                            project.get('estimatedCost'),
-                            project.get('dataVersionId'),
-                            project.get('estimatedStartDate'),
-                            project.get('estimatedEndDate'),
+                            project.get('ProjectId'),
+                            project.get('ProjectNumber'),
+                            project.get('ProjectName'),
+                            project.get('ProjectCreatedOn'),
+                            project.get('ProjectStatus'),
+                            project.get('FacilityName'),
+                            project.get('City'),
+                            project.get('County'),
+                            project.get('TypeOfWork'),
+                            project.get('EstimatedCost'),
+                            project.get('DataVersionId'),
+                            project.get('EstimatedStartDate'),
+                            project.get('EstimatedEndDate'),
                             datetime.now().isoformat()
                         ))
                         inserted += 1
