@@ -78,16 +78,15 @@ EOF
 
 ### 2. Run Project Search
 
-Execute the search script to fetch raw projects from OpenClaw:
+You have two options for searching projects:
+
+**Option A: OpenClaw API Search (recommended for production)**
 
 ```bash
 python scripts/search_projects.py > raw_results.json
 ```
 
-The script:
-- Connects to OpenClaw API using `OPENCLAW_API_KEY`
-- Searches for construction projects
-- Returns JSON with project details: name, location, size, cost, timeline, owner, architect, GC, stage
+The script connects to OpenClaw API using `OPENCLAW_API_KEY` and searches for construction projects. Returns JSON with project details: name, location, size, cost, timeline, owner, architect, GC, stage.
 
 **Current implementation** includes placeholder sample data. Replace the `search_projects()` function with actual OpenClaw API integration:
 
@@ -104,6 +103,50 @@ results = client.search_construction_projects(
 )
 
 return results.to_dict()
+```
+
+**Option B: Local SQLite Database Query (for testing or offline use)**
+
+```bash
+python scripts/query_db.py requirements.md [path/to/projects.db] > raw_results.json
+```
+
+This script queries a local SQLite database with filtering applied directly at the database level. Ideal for:
+- Testing the workflow without API access
+- Working with cached/offline project data
+- Custom data sources that can be imported to SQLite
+
+Create a test database with sample projects:
+```bash
+python scripts/create_test_db.py  # Creates projects.db with 10 sample TX projects
+```
+
+The database query script automatically filters by your requirements criteria:
+- Start date (after specified date)
+- Location (Texas, specific cities/counties)
+- Square footage (min/max)
+- Project type
+- Estimated cost (min/max)
+- Disqualifiers (excluded project types)
+
+**Database schema:**
+```sql
+CREATE TABLE projects (
+    id INTEGER PRIMARY KEY,
+    project_name TEXT NOT NULL,
+    location TEXT NOT NULL,
+    county TEXT,
+    project_type TEXT NOT NULL,
+    square_footage INTEGER,
+    estimated_cost TEXT,
+    start_date TEXT,
+    completion_date TEXT,
+    owner TEXT,
+    architect TEXT,
+    general_contractor TEXT,
+    project_stage TEXT,
+    description TEXT
+)
 ```
 
 ### 3. Filter and Rank Projects
@@ -217,10 +260,11 @@ requirements = {
 
 ## Example End-to-End
 
+**Using OpenClaw API:**
 ```bash
 # 1. Requirements already saved to requirements.md
 
-# 2. Search for projects
+# 2. Search for projects via API
 python scripts/search_projects.py > raw_results.json
 
 # 3. Filter and rank
@@ -234,6 +278,20 @@ create_cron_job \
   name:"Daily Construction Leads" \
   schedule:"0 9 * * *" \
   prompt:"Run OpenClaw construction search and send top 10 to Slack #gtm-leads"
+```
+
+**Using SQLite Database:**
+```bash
+# 1. Requirements already saved to requirements.md
+
+# 2. Query local database (filtering at DB level)
+python scripts/query_db.py requirements.md projects.db > raw_results.json
+
+# 3. (Optional) Further filter and rank with scoring
+python scripts/filter_projects.py raw_results.json requirements.md > qualified_projects.json
+
+# 4. Review results
+jq '.projects[] | {project_name, location, square_footage, start_date}' raw_results.json
 ```
 
 ## Testing Without OpenClaw
