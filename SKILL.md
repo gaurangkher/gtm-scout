@@ -5,19 +5,19 @@ description: "GTM Engineer helper skill using OpenClaw. Collect requirements, se
 
 # OpenClaw GTM Lead Generation
 
-Automate project generation for GTM agents by collecting requirements, running OpenClaw-based project searches, filtering results, and scheduling recurring searches.
+Automate project search for GTM agents by collecting requirements, running OpenClaw-based project searches, filtering results, and scheduling recurring searches.
 
 ## Workflow
 
 ### 1. Collect Requirements
 
-Ask the user for project generation criteria and save to `requirements.md`:
+Ask the user for project criteria and save to `requirements.md`:
 
-- Industries, company size, geography, stage
-- Tech stack, job postings, GitHub activity
-- Engagement signals (funding, launches, growth)
-- Disqualifiers and exclusions
-- Output preferences (project limit, contact preferences)
+- Start Date
+- Project Location
+- Type of Work
+- Square Footage
+- Estimated Cost
 
 Use `references/requirements_template.md` as a guide for what to ask.
 
