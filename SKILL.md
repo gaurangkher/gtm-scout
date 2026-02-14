@@ -1,23 +1,23 @@
 ---
-name: openclaw-gtm
-description: "Automate GTM lead generation using OpenClaw. Collect requirements, search for leads, filter results based on criteria, and schedule recurring searches. Use when GTM agents need to: (1) Define lead generation requirements, (2) Search for potential leads using OpenClaw, (3) Filter and rank leads by match score, (4) Set up scheduled lead searches for fresh results."
+name: gtm-scout
+description: "GTM Engineer helper skill using OpenClaw. Collect requirements, search for projects, filter results based on criteria, and schedule recurring searches. Use when GTM agents need to: (1) Define project requirements, (2) Search for potential projects using OpenClaw, (3) Filter and rank projects by match score, (4) Set up scheduled project searches for fresh results."
 ---
 
 # OpenClaw GTM Lead Generation
 
-Automate lead generation for GTM agents by collecting requirements, running OpenClaw-based lead searches, filtering results, and scheduling recurring searches.
+Automate project generation for GTM agents by collecting requirements, running OpenClaw-based project searches, filtering results, and scheduling recurring searches.
 
 ## Workflow
 
 ### 1. Collect Requirements
 
-Ask the user for lead generation criteria and save to `requirements.md`:
+Ask the user for project generation criteria and save to `requirements.md`:
 
 - Industries, company size, geography, stage
 - Tech stack, job postings, GitHub activity
 - Engagement signals (funding, launches, growth)
 - Disqualifiers and exclusions
-- Output preferences (lead limit, contact preferences)
+- Output preferences (project limit, contact preferences)
 
 Use `references/requirements_template.md` as a guide for what to ask.
 
@@ -45,13 +45,13 @@ EOF
 
 ### 2. Run Lead Search
 
-Execute the search script to fetch raw leads from OpenClaw:
+Execute the search script to fetch raw projects from OpenClaw:
 
 ```bash
 python scripts/search_leads.py > raw_results.json
 ```
 
-**Note:** The current `search_leads.py` is a placeholder. Replace the `search_leads()` function with actual OpenClaw API integration for your lead sources.
+**Note:** The current `search_leads.py` is a placeholder. Replace the `search_leads()` function with actual OpenClaw API integration for your project sources.
 
 ### 3. Filter and Rank Leads
 
@@ -62,12 +62,12 @@ python scripts/filter_leads.py raw_results.json requirements.md > qualified_lead
 ```
 
 The filter script:
-- Scores leads based on criteria match (industry, size, tech stack, funding, etc.)
-- Excludes disqualified leads
+- Scores projects based on criteria match (industry, size, tech stack, funding, etc.)
+- Excludes disqualified projects
 - Ranks by match score
-- Limits to specified lead count
+- Limits to specified project count
 
-Present the top qualified leads to the user with match scores and reasons.
+Present the top qualified projects to the user with match scores and reasons.
 
 ### 4. Schedule Recurring Searches
 
@@ -78,7 +78,7 @@ Set up a cron job to run searches automatically:
 create_cron_job \
   name:"GTM Lead Search" \
   schedule:"0 9 * * *" \
-  prompt:"Run the OpenClaw GTM lead search using requirements.md, filter results, and send the top 10 qualified leads to my Slack channel"
+  prompt:"Run the OpenClaw GTM project search using requirements.md, filter results, and send the top 10 qualified projects to my Slack channel"
 ```
 
 Common schedules:
@@ -123,8 +123,8 @@ Adjust the scoring logic in `score_lead()` to match your GTM priorities:
 
 - Start with narrow requirements (fewer results, higher quality)
 - Review filtered results and adjust scoring weights
-- Use scheduled searches to catch new leads early
-- Combine with messaging skill to auto-notify on new qualified leads
+- Use scheduled searches to catch new projects early
+- Combine with messaging skill to auto-notify on new qualified projects
 - Save `qualified_leads.json` history to track outreach
 
 ## Example End-to-End
