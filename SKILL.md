@@ -10,8 +10,15 @@ Automate construction project discovery for GTM teams by collecting requirements
 ## Setup
 
 ### Prerequisites
+
+**For OpenClaw API search:**
 - OpenClaw account with API access
 - API credentials configured
+
+**For TDLR web scraping:**
+- Python 3.7+
+- Install dependencies: `pip install -r requirements.txt`
+- Install Playwright browser: `playwright install chromium`
 
 ### Configuration
 
@@ -26,6 +33,9 @@ Go to ClawBox Settings → Environment Variables → Add:
 - Value: `your-api-key-here`
 
 The search script will check for this environment variable and provide clear error messages if not configured.
+
+**For TDLR scraping (no API key needed):**
+The TDLR scraper connects directly to the public Texas Department of Licensing and Regulation (TDLR) website and requires no authentication.
 
 ## Workflow
 
@@ -78,9 +88,53 @@ EOF
 
 ### 2. Run Project Search
 
-You have two options for searching projects:
+You have three options for searching projects:
 
-**Option A: OpenClaw API Search (recommended for production)**
+**Option A: TDLR Web Scraper (Texas public records, no API required)**
+
+Scrape real construction projects from the Texas Department of Licensing and Regulation:
+
+```bash
+# Basic scraping (first 10 pages)
+python scripts/scrape_tdlr_enhanced.py projects.db
+
+# More pages
+python scripts/scrape_tdlr_enhanced.py projects.db --max-pages 50
+
+# Filter by city
+python scripts/scrape_tdlr_enhanced.py projects.db --city "Austin" --max-pages 20
+
+# Filter by county
+python scripts/scrape_tdlr_enhanced.py projects.db --county "Travis"
+
+# Get detailed project info (slower, clicks into each project)
+python scripts/scrape_tdlr_enhanced.py projects.db --detailed --max-pages 5
+
+# Custom start date filter
+python scripts/scrape_tdlr_enhanced.py projects.db --start-date "2026-03-01"
+```
+
+The scraper:
+- Connects to https://www.tdlr.texas.gov/TABS/search
+- Applies filters (city, county, status, date range)
+- Scrapes project listings with pagination
+- Optionally clicks into project details for complete info
+- Saves all projects to SQLite database
+- Creates indexes for fast querying
+
+**After scraping, query the database:**
+
+```bash
+# Query with your requirements
+python scripts/query_db.py requirements.md projects.db > raw_results.json
+
+# Then filter and rank as usual
+python scripts/filter_projects.py raw_results.json requirements.md > qualified_projects.json
+```
+
+This is the **recommended approach** for Texas construction projects - it provides real, current data from public records.
+
+**Option B: OpenClaw API Search (if you have API access)**
 
 ```bash
 python scripts/search_projects.py > raw_results.json
@@ -105,7 +159,32 @@ results = client.search_construction_projects(
 return results.to_dict()
 ```
 
-**Option B: Local SQLite Database Query (for testing or offline use)**
+**Option B: OpenClaw API Search (if you have API access)**
+
+```bash
+python scripts/search_projects.py > raw_results.json
+```
+
+The script connects to OpenClaw API using `OPENCLAW_API_KEY` and searches for construction projects. Returns JSON with project details: name, location, size, cost, timeline, owner, architect, GC, stage.
+
+**Current implementation** includes placeholder sample data. Replace the `search_projects()` function with actual OpenClaw API integration:
+
+```python
+import openclaw_client
+
+client = openclaw_client.Client(api_key=os.getenv("OPENCLAW_API_KEY"))
+
+results = client.search_construction_projects(
+    location="Texas",
+    start_date_after="2026-03-01",
+    min_square_footage=100000,
+    project_types=["commercial", "industrial", "mixed-use"]
+)
+
+return results.to_dict()
+```
+
+**Option C: Local SQLite Database Query (for testing or custom data)**
 
 ```bash
 python scripts/query_db.py requirements.md [path/to/projects.db] > raw_results.json
@@ -206,6 +285,18 @@ Present the top qualified projects to the user with match scores and reasons.
 
 Set up a cron job to run searches automatically:
 
+**For TDLR scraping + filtering:**
+
+```bash
+# Example: Daily scrape new Texas projects and notify on matches
+create_cron_job \
+  name:"Daily TDLR Construction Scraper" \
+  schedule:"0 9 * * *" \
+  prompt:"Run python scripts/scrape_tdlr_enhanced.py projects.db --max-pages 5, then query with requirements.md, filter results, and send top 10 qualified projects to Slack #gtm-leads"
+```
+
+**For OpenClaw API:**
+
 ```bash
 # Example: Daily search at 9 AM
 create_cron_job \
@@ -259,6 +350,33 @@ requirements = {
 - **Leverage project stage** - "Bidding" and "Pre-Construction" are prime opportunities
 
 ## Example End-to-End
+
+**Using TDLR Scraper (Recommended for Texas projects):**
+```bash
+# 1. Install dependencies (one-time setup)
+pip install -r requirements.txt
+playwright install chromium
+
+# 2. Requirements already saved to requirements.md
+
+# 3. Scrape live Texas projects
+python scripts/scrape_tdlr_enhanced.py projects.db --city "Austin" --max-pages 20
+
+# 4. Query database with requirements (filtering at DB level)
+python scripts/query_db.py requirements.md projects.db > raw_results.json
+
+# 5. Filter and rank with scoring
+python scripts/filter_projects.py raw_results.json requirements.md > qualified_projects.json
+
+# 6. Review top 5 projects
+jq '.projects[:5] | .[] | {project_name, location, match_score, estimated_cost, start_date}' qualified_projects.json
+
+# 7. Schedule daily scraping + filtering
+create_cron_job \
+  name:"Daily TDLR Leads" \
+  schedule:"0 9 * * *" \
+  prompt:"Scrape TDLR projects, query with requirements, and send top 10 to Slack #gtm-leads"
+```
 
 **Using OpenClaw API:**
 ```bash
